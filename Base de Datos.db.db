@@ -1,0 +1,50 @@
+
+#Creamos la Base De Datos " DB "
+CREATE DATABASE DB ;
+USE DB;
+#Load 
+#Creamos una tabla general donde searan las cargas incrementales 
+CREATE TABLE Precios_General (
+  `IdSucursal` 		    	 VARCHAR(250),
+	`IdProducto`			 VARCHAR(250),
+    `Precio`				 VARCHAR(250)
+
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+
+
+#A continuacion aremos un ejemplo del proceso de ETL usando solo la herramienta MySql
+#Extraccion
+CREATE TABLE `precios_semana_20200519` (
+	`precio`					VARCHAR(250),
+    `sucursal_id` 		    	VARCHAR(250),
+    `producto_id`				VARCHAR(250)
+		
+) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_spanish_ci;
+LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\Datasets\\precios_semana_20200518.csv'  
+INTO TABLE `precios_semana_20200519` 
+FIELDS TERMINATED BY '|' ENCLOSED BY '' ESCAPED BY '' 
+LINES TERMINATED BY '\n' IGNORE 1 LINES;
+
+#Tranformacion
+ALTER TABLE `precios_semana_20200519` CHANGE `precio` `Precio` VARCHAR(250) ;
+ALTER TABLE `precios_semana_20200519` CHANGE `sucursal_id` `IdSucursal` VARCHAR(255) ;
+ALTER TABLE `precios_semana_20200519` CHANGE `producto_id` `IdProducto` varchar(250) ;
+UPDATE `precios_semana_20200519` SET Precio = 'Sin Dato' WHERE TRIM(precio) = " " OR ISNULL(precio);
+UPDATE `precios_semana_20200519` SET IdSucursal = 'Sin Dato' WHERE TRIM(IdSucursal) = " " OR ISNULL(IdSucursal);
+UPDATE `precios_semana_20200519` SET IdProducto = 'Sin Dato' WHERE TRIM(IdProducto) = " " OR ISNULL(IdProducto);
+ALTER TABLE `precios_semana_20200519`
+MODIFY Precio varchar(250)
+AFTER IdProducto;
+UPDATE `precios_semana_20200519` SET IdProducto = REPLACE(IdProducto,'-','');
+ALTER TABLE precios_semana_20200519
+ADD Fecha VARCHAR(20) NULL ;
+UPDATE `precios_semana_20200519` SET IdSucursal = REPLACE(IdSucursal,'"','');
+UPDATE `precios_semana_20200519` SET IdSucursal = REPLACE(IdSucursal,' ','');
+
+#Load
+INSERT INTO Precios_General
+SELECT * FROM precios_semana_20200519;
+DROP TABLE precios_semana_20200519;
+
+
